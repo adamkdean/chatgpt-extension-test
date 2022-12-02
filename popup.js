@@ -1,0 +1,42 @@
+// Copyright (C) 2022 Adam K Dean <adamkdean@googlemail.com>
+// Use of this source code is governed by the GPL-3.0
+// license that can be found in the LICENSE file.
+
+const form = document.querySelector('form')
+const statusContainer = document.querySelector('#status')
+const statusText = document.querySelector('#status-text')
+const username = document.querySelector('#username')
+const connectButton = document.querySelector('#connect-button')
+const disconnectButton = document.querySelector('#disconnect-button')
+
+let socket = null
+
+username.addEventListener('input', () => {
+  connectButton.disabled = !username.value
+})
+
+disconnectButton.addEventListener('click', () => {
+  if (socket) socket.close()
+  statusText.innerHTML = 'Disconnected'
+})
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault()
+  if (!username.value) return console.error('error: username required')
+
+  socket = new WebSocket(`ws://localhost:8080?username=${username.value}`)
+  statusText.innerHTML = `Connecting with username ${username.value}...`
+  console.log(`Connecting with username ${username.value}...`)
+
+  socket.onopen = () => {
+    statusText.innerHTML = `Connected as ${username.value}`
+    form.style.display = 'none'
+    disconnectButton.style.display = 'block'
+  }
+
+  socket.onclose = () => {
+    statusText.innerHTML = 'Disconnected'
+    form.style.display = 'flex'
+    disconnectButton.style.display = 'none'
+  }
+})
