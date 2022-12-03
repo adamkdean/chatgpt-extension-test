@@ -10,5 +10,10 @@
   "permissions": [
     "activeTab",
     "scripting"
-  ]
+  ],
+  "background": {
+    "scripts": [
+      "service.js"
+    ]
+  }
 }
