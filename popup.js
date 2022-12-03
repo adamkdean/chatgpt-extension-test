@@ -2,6 +2,7 @@
 // Use of this source code is governed by the GPL-3.0
 // license that can be found in the LICENSE file.
 
+const logContainer = document.querySelector('#log-container')
 const form = document.querySelector('form')
 const statusContainer = document.querySelector('#status')
 const statusText = document.querySelector('#status-text')
@@ -11,13 +12,21 @@ const disconnectButton = document.querySelector('#disconnect-button')
 
 let socket = null
 
+function log(message) {
+  const p = document.createElement('p')
+  p.textContent = message
+  logContainer.appendChild(p)
+  logContainer.scrollTop = logContainer.scrollHeight
+  statusText.innerHTML = message
+}
+
 username.addEventListener('input', () => {
   connectButton.disabled = !username.value
 })
 
 disconnectButton.addEventListener('click', () => {
   if (socket) socket.close()
-  statusText.innerHTML = 'Disconnected'
+  log('Disconnected')
 })
 
 form.addEventListener('submit', (event) => {
@@ -25,39 +34,48 @@ form.addEventListener('submit', (event) => {
   if (!username.value) return console.error('error: username required')
 
   socket = new WebSocket(`ws://localhost:8080?username=${username.value}`)
-  statusText.innerHTML = `Connecting with username ${username.value}...`
-  console.log(`Connecting with username ${username.value}...`)
+  log(`Connecting with username ${username.value}...`)
 
   socket.onopen = () => {
-    statusText.innerHTML = `Connected as ${username.value}`
+    log(`Connected as ${username.value}`)
     form.style.display = 'none'
     disconnectButton.style.display = 'block'
   }
 
   socket.onerror = (error) => {
     console.error('WebSocket error:', error)
-    statusText.innerHTML = 'Error connecting'
+    log('Error connecting')
   }
 
   socket.onclose = () => {
-    statusText.innerHTML = 'Disconnected'
+    log('Disconnected')
     form.style.display = 'flex'
     disconnectButton.style.display = 'none'
   }
 
   socket.addEventListener('message', (message) => {
-    console.log('received message:', message.data)
+    log(`received message: ${message.data}`)
 
     if (message.data === 'SESSION_PENDING') {
-      statusText.innerHTML = `Connected as ${username.value} (waiting for other user)`
+      log(`Connected as ${username.value} (waiting for other user)`)
+    }
+
+    if (message.data === 'SERVER_BUSY') {
+      log('Server busy')
+      socket.close()
+    }
+
+    if (message.data === 'USERNAME_BUSY') {
+      log('Username in use')
+      socket.close()
     }
 
     if (message.data === 'SESSION_ACTIVE') {
-      statusText.innerHTML = 'Session active'
+      log('Session active')
     }
 
     if (message.data === 'SESSION_TERMINATED') {
-      statusText.innerHTML = 'Session terminated'
+      log('Session terminated')
       form.style.display = 'flex'
       disconnectButton.style.display = 'none'
     }
