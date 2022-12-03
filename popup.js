@@ -34,9 +34,32 @@ form.addEventListener('submit', (event) => {
     disconnectButton.style.display = 'block'
   }
 
+  socket.onerror = (error) => {
+    console.error('WebSocket error:', error)
+    statusText.innerHTML = 'Error connecting'
+  }
+
   socket.onclose = () => {
     statusText.innerHTML = 'Disconnected'
     form.style.display = 'flex'
     disconnectButton.style.display = 'none'
   }
+
+  socket.addEventListener('message', (message) => {
+    console.log('received message:', message.data)
+
+    if (message.data === 'SESSION_PENDING') {
+      statusText.innerHTML = `Connected as ${username.value} (waiting for other user)`
+    }
+
+    if (message.data === 'SESSION_ACTIVE') {
+      statusText.innerHTML = 'Session active'
+    }
+
+    if (message.data === 'SESSION_TERMINATED') {
+      statusText.innerHTML = 'Session terminated'
+      form.style.display = 'flex'
+      disconnectButton.style.display = 'none'
+    }
+  })
 })
